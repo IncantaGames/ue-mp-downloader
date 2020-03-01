@@ -2,5 +2,4 @@ download/
 dump/
 node_modules/
 .vscode/
-evil.js
 .env
