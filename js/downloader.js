@@ -15,7 +15,7 @@ global.epic_api = (global.epic_api === undefined) ? require("./epic_api.js") : g
 const prompt = require("prompt");
 const cheerio = require("cheerio");
 const menu = require("console-menu");
-const dotenv = require("dotenv").config();
+require("dotenv").config();
 
 // Takes an HTML form from cheerio.serializeArray() and converts it to an object suitable for the "request" module
 function SerializeLoginFormArray(form) {

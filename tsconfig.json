@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    /* Basic Options */
+    "target": "ES2017",                       /* Specify ECMAScript target version: 'ES3' (default), 'ES5', 'ES2015', 'ES2016', 'ES2017','ES2018' or 'ESNEXT'. */
+    "module": "commonjs",                     /* Specify module code generation: 'none', 'commonjs', 'amd', 'system', 'umd', 'es2015', or 'ESNext'. */
+    "declaration": true,                      /* Generates corresponding '.d.ts' file. */
+    "declarationMap": true,                   /* Generates a sourcemap for each corresponding '.d.ts' file. */
+    "outDir": "lib",                         /* Redirect output structure to the directory. */
+    "rootDir": "./src",                       /* Specify the root directory of input files. Use to control the output directory structure with --outDir. */
+
+    /* Strict Type-Checking Options */
+    "strict": true,                           /* Enable all strict type-checking options. */
+
+    /* Additional Checks */
+    "noUnusedLocals": true,                   /* Report errors on unused locals. */
+    "noUnusedParameters": true,               /* Report errors on unused parameters. */
+    "noImplicitReturns": true,                /* Report error when not all code paths in function return a value. */
+    "noFallthroughCasesInSwitch": true,       /* Report errors for fallthrough cases in switch statement. */
+    "skipLibCheck": true,                     /* If transitive dependencies have typing errors, ignore them. */
+
+    /* Module Resolution Options */
+    "esModuleInterop": true,                  /* Enables emit interoperability between CommonJS and ES Modules via creation of namespace objects for all imports. Implies 'allowSyntheticDefaultImports'. */
+    "resolveJsonModule": true,
+
+    /* Source Map Options */
+    "inlineSourceMap": true,                  /* Emit a single file with source maps instead of having a separate file. */
+
+    /* Experimental Options */
+    "experimentalDecorators": true,           /* Enables experimental support for ES7 decorators. */
+    "emitDecoratorMetadata": true,            /* Enables experimental support for emitting type metadata for decorators. */
+
+    "typeRoots": [ "./types", "./node_modules/@types" ],
+  },
+  "include": [
+    "src/**/*.json",
+    "src/**/*.ts"
+  ]
+}
