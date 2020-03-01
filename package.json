@@ -16,6 +16,8 @@
   ],
   "license": "MIT",
   "dependencies": {
+    "axios": "^0.19.2",
+    "axios-cookiejar-support": "^0.5.1",
     "cheerio": "^1.0.0-rc.2",
     "console-menu": "^0.1.0",
     "dotenv": "^8.2.0",
@@ -28,6 +30,7 @@
     "prompt": "^1.0.0",
     "request": "^2.81.0",
     "rimraf": "^2.6.1",
+    "tough-cookie": "^3.0.1",
     "yargs": "^8.0.2"
   },
   "devDependencies": {
