@@ -1,3 +1,3 @@
 #!/usr/bin/env node
 
-var mpdownloader = require('./index.js');
+var mpdownloader = require("./index.js");

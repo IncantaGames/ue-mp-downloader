@@ -1,12 +1,12 @@
-// API for interfacing with Epic's 'deep' API
+// API for interfacing with Epic's "deep" API
 var epic_api = function () { };
 
-const rimraf = require('rimraf');
-const mkdirp = require('mkdirp');
-const ProgressBar = require('progress');
-const zlib = require('zlib');
-const fs = require('fs');
-var url = require('url')
+const rimraf = require("rimraf");
+const mkdirp = require("mkdirp");
+const ProgressBar = require("progress");
+const zlib = require("zlib");
+const fs = require("fs");
+var url = require("url")
 
 var slowRequestPool = { maxSockets: 2 };
 var downloadPool = { maxSockets: 10 };
@@ -28,11 +28,11 @@ global.epic_SSO_RM = (global.epic_SSO_RM === undefined) ? undefined : global.epi
 // Callback has string parameter containing login form html, i.e. function (form) ()
 epic_api.prototype.GetWebLoginForm = function (cb_form) {
   var opts = {
-    uri: 'https://accounts.unrealengine.com/login/doLogin',
+    uri: "https://accounts.unrealengine.com/login/doLogin",
   };
 
   request.get(opts, function (error, response, body) {
-    global.epic_api.updateFakeJar(response.headers['set-cookie']);
+    global.epic_api.updateFakeJar(response.headers["set-cookie"]);
     if (cb_form != undefined) {
       cb_form(body);
     }
@@ -41,9 +41,9 @@ epic_api.prototype.GetWebLoginForm = function (cb_form) {
 
 epic_api.prototype.updateFakeJar = function (set_cookie_array) {
   for (var i = 0; i < set_cookie_array.length; ++i) {
-    var cookie_pair = set_cookie_array[i].split(';', 1)[0].split('=');
+    var cookie_pair = set_cookie_array[i].split(";", 1)[0].split("=");
     global.fakeJar[cookie_pair[0]] = cookie_pair[1];
-    if (cookie_pair[1] == 'invalid') {
+    if (cookie_pair[1] == "invalid") {
       delete global.fakeJar[cookie_pair[0]];
     }
   }
@@ -52,29 +52,29 @@ epic_api.prototype.updateFakeJar = function (set_cookie_array) {
 epic_api.prototype.GetWebCookieString = function () {
   var cookieString = "";
   for (var key in global.fakeJar) {
-    cookieString += key + '=' + global.fakeJar[key] + '; ';
+    cookieString += key + "=" + global.fakeJar[key] + "; ";
   }
   return cookieString;
 }
 
 epic_api.prototype.WebLogin = function (loginObject, cb_status) {
   var opts = {
-    uri: 'https://accounts.unrealengine.com/login/doLogin',
+    uri: "https://accounts.unrealengine.com/login/doLogin",
     form: loginObject,
-    headers: { Cookie: global.epic_api.GetWebCookieString(), Origin: 'allar_ue4_marketplace_commandline' },
-    qs: { client_id: '43e2dea89b054198a703f6199bee6d5b' }
+    headers: { Cookie: global.epic_api.GetWebCookieString(), Origin: "allar_ue4_marketplace_commandline" },
+    qs: { client_id: "43e2dea89b054198a703f6199bee6d5b" }
   };
 
 
   request.post(opts, function (error, response, body) {
     if (response.statusCode == 400) // login failure
     {
-      cb_status('Failed', false);
+      cb_status("Failed", false);
     } else if (response.statusCode == 302) // success
     {
-      global.epic_api.updateFakeJar(response.headers['set-cookie']);
+      global.epic_api.updateFakeJar(response.headers["set-cookie"]);
       if (cb_status != undefined) {
-        cb_status('Authorizing Web Login...', false);
+        cb_status("Authorizing Web Login...", false);
       }
       global.epic_api.WebAuthorize(loginObject.epic_username, loginObject.password, cb_status);
     }
@@ -87,24 +87,24 @@ epic_api.prototype.WebLogin = function (loginObject, cb_status) {
 
 epic_api.prototype.WebAuthorize = function (user, pass, cb_status) {
   var opts = {
-    uri: 'https://accounts.unrealengine.com/authorize/index',
-    headers: { Cookie: global.epic_api.GetWebCookieString(), Origin: 'allar_ue4_marketplace_commandline' },
-    qs: { client_id: '43e2dea89b054198a703f6199bee6d5b', response_type: 'code', forWidget: 'true' }
+    uri: "https://accounts.unrealengine.com/authorize/index",
+    headers: { Cookie: global.epic_api.GetWebCookieString(), Origin: "allar_ue4_marketplace_commandline" },
+    qs: { client_id: "43e2dea89b054198a703f6199bee6d5b", response_type: "code", forWidget: "true" }
   };
 
   request.get(opts, function (error, response, body) {
-    global.epic_api.updateFakeJar(response.headers['set-cookie']);
+    global.epic_api.updateFakeJar(response.headers["set-cookie"]);
 
     if (response.statusCode == 200) {
       var json = JSON.parse(body);
-      var code = json.redirectURL.split('?code=')[1];
+      var code = json.redirectURL.split("?code=")[1];
       if (cb_status != undefined) {
-        cb_status('Successfully Web Authorized! Performing Web Exchange...', false);
+        cb_status("Successfully Web Authorized! Performing Web Exchange...", false);
       }
       global.epic_api.WebExchange(user, pass, code, cb_status);
     } else {
       if (cb_status != undefined) {
-        cb_status('Web Auth failed: ' + JSON.stringify(response, null, ' '), false);
+        cb_status("Web Auth failed: " + JSON.stringify(response, null, " "), false);
       }
     }
   });
@@ -112,46 +112,46 @@ epic_api.prototype.WebAuthorize = function (user, pass, cb_status) {
 
 epic_api.prototype.WebExchange = function (user, pass, code, cb_status) {
   var opts = {
-    uri: 'https://www.unrealengine.com/exchange',
+    uri: "https://www.unrealengine.com/exchange",
     headers: { Cookie: global.epic_api.GetWebCookieString() },
     qs: { code: code }
   };
 
   request.get(opts, function (error, response, body) {
-    global.epic_api.updateFakeJar(response.headers['set-cookie']);
+    global.epic_api.updateFakeJar(response.headers["set-cookie"]);
 
     if (response.statusCode == 302) {
       if (cb_status != undefined) {
-        cb_status('Intentionally failed Web Exchage! Performing OAuth...', false);
+        cb_status("Intentionally failed Web Exchage! Performing OAuth...", false);
       }
       global.epic_api.OAuthViaPassword(user, pass, cb_status);
     } else {
       if (cb_status != undefined) {
-        cb_status('Web Exchange failed: ' + JSON.stringify(response, null, ' '), false);
+        cb_status("Web Exchange failed: " + JSON.stringify(response, null, " "), false);
       }
     }
   });
 }
 
-// Go through Epic's OAuth chain using a username and password
+// Go through Epic"s OAuth chain using a username and password
 // cb_status is a callback with string parameter of current OAuth status and bool of whether complete. (status, bComplete)
 epic_api.prototype.OAuthViaPassword = function (user, pass, cb_status) {
   var opts = {
-    uri: 'https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/token',
-    headers: { Authorization: 'basic MzRhMDJjZjhmNDQxNGUyOWIxNTkyMTg3NmRhMzZmOWE6ZGFhZmJjY2M3Mzc3NDUwMzlkZmZlNTNkOTRmYzc2Y2Y=', Origin: 'allar_ue4_marketplace_commandline' },
-    form: { grant_type: 'password', username: user, password: pass, includePerms: true }
+    uri: "https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/token",
+    headers: { Authorization: "basic MzRhMDJjZjhmNDQxNGUyOWIxNTkyMTg3NmRhMzZmOWE6ZGFhZmJjY2M3Mzc3NDUwMzlkZmZlNTNkOTRmYzc2Y2Y=", Origin: "allar_ue4_marketplace_commandline" },
+    form: { grant_type: "password", username: user, password: pass, includePerms: true }
   };
 
   request.post(opts, function (error, response, body) {
     if (response.statusCode == 200) {
       global.epic_oauth = JSON.parse(body);
       if (cb_status != undefined) {
-        cb_status('Got OAuth token, exchanging for code', false);
+        cb_status("Got OAuth token, exchanging for code", false);
       }
       module.exports.OAuthExchange(cb_status);
     } else {
       if (cb_status != undefined) {
-        cb_status('OAuth Via Password failed: ' + JSON.stringify(response, null, ' '), false);
+        cb_status("OAuth Via Password failed: " + JSON.stringify(response, null, " "), false);
       }
     }
   });
@@ -160,8 +160,8 @@ epic_api.prototype.OAuthViaPassword = function (user, pass, cb_status) {
 // cb_status is a callback with string parameter of current OAuth status and bool of whether complete. (status, bComplete)
 epic_api.prototype.OAuthExchange = function (cb_status) {
   var opts = {
-    uri: 'https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/exchange',
-    headers: { Authorization: 'bearer ' + global.epic_oauth.access_token, Origin: 'allar_ue4_marketplace_commandline' }
+    uri: "https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/exchange",
+    headers: { Authorization: "bearer " + global.epic_oauth.access_token, Origin: "allar_ue4_marketplace_commandline" }
   };
 
   request.get(opts, function (error, response, body) {
@@ -170,10 +170,10 @@ epic_api.prototype.OAuthExchange = function (cb_status) {
       global.epic_oauth.code = json.code;
       if (cb_status != undefined) {
         if (global.epic_SSO === undefined) {
-          cb_status('Got OAuth exchange code. Getting SSO.', false);
+          cb_status("Got OAuth exchange code. Getting SSO.", false);
         }
         else {
-          cb_status('Got OAuth exchange code. Skipping SSO.', true);
+          cb_status("Got OAuth exchange code. Skipping SSO.", true);
         }
       }
       // Grab our SSO token
@@ -184,7 +184,7 @@ epic_api.prototype.OAuthExchange = function (cb_status) {
       global.setTimeout(module.exports.OAuthExchange, 250 * 1000);
     } else {
       if (cb_status != undefined) {
-        cb_status('OAuth renew failed: ' + JSON.stringify(response, null, ' '), false);
+        cb_status("OAuth renew failed: " + JSON.stringify(response, null, " "), false);
       }
     }
   });
@@ -193,34 +193,34 @@ epic_api.prototype.OAuthExchange = function (cb_status) {
 // cb_status is a callback with string parameter of current OAuth status and bool of whether complete. (status, bComplete)
 epic_api.prototype.GetSSOWithOAuthCode = function (cb_status) {
   var opts = {
-    uri: 'https://accountportal-website-prod07.ol.epicgames.com/exchange?',
-    headers: { Authorization: 'bearer ' + global.epic_oauth.access_token, Origin: 'allar_ue4_marketplace_commandline' },
-    qs: { exchangeCode: global.epic_oauth.code, state: '/getSsoStatus' }
+    uri: "https://accountportal-website-prod07.ol.epicgames.com/exchange?",
+    headers: { Authorization: "bearer " + global.epic_oauth.access_token, Origin: "allar_ue4_marketplace_commandline" },
+    qs: { exchangeCode: global.epic_oauth.code, state: "/getSsoStatus" }
   };
 
   request.get(opts, function (error, response, body) {
-    //module.exports.updateFakeJar(response.headers['set-cookie']);
+    //module.exports.updateFakeJar(response.headers["set-cookie"]);
 
     if (response.statusCode == 302) {
       if (cb_status != undefined) {
-        cb_status('Successfully Authorized!', true);
+        cb_status("Successfully Authorized!", true);
       }
     } else {
       if (cb_status != undefined) {
-        cb_status('Failed', false);
+        cb_status("Failed", false);
       }
     }
   });
 }
 
-// Gets 'user-friendly' marketplace categories
-// namespace 'ue': Marketplace items
+// Gets "user-friendly" marketplace categories
+// namespace "ue": Marketplace items
 // callback expects a bool indicating whether we fetched data, i.e. (success)
 epic_api.prototype.GetMarketplaceCategories = function (cb) {
   var opts = {
-    uri: 'https://www.unrealengine.com/assets/ajax-get-categories',
-    form: { category: 'assets/environments', start: 0 },
-    headers: { Origin: 'allar_ue4_marketplace_commandline' }
+    uri: "https://www.unrealengine.com/assets/ajax-get-categories",
+    form: { category: "assets/environments", start: 0 },
+    headers: { Origin: "allar_ue4_marketplace_commandline" }
   };
 
   request.post(opts, function (error, response, body) {
@@ -242,23 +242,23 @@ epic_api.prototype.GetMarketplaceCategories = function (cb) {
 epic_api.prototype.GetCategoryIndex = function (category_path) {
   // Due to outdated Epic data, we have to fix up some paths
   switch (category_path) {
-    case 'assets/fx':
-    case 'assets/textures':
-      category_path = 'assets/textures-fx';
+    case "assets/fx":
+    case "assets/textures":
+      category_path = "assets/textures-fx";
       break;
-    case 'assets/weapons':
-    case 'assets/props':
-      category_path = 'assets/weapons-props';
+    case "assets/weapons":
+    case "assets/props":
+      category_path = "assets/weapons-props";
       break;
-    case 'assets/soundfx':
-    case 'assets/music':
-      category_path = 'assets/music-soundfx';
+    case "assets/soundfx":
+    case "assets/music":
+      category_path = "assets/music-soundfx";
       break;
-    case 'assets/animations':
-    case 'assets/characters':
-      category_path = 'assets/characters-animations';
+    case "assets/animations":
+    case "assets/characters":
+      category_path = "assets/characters-animations";
       break;
-    case 'assets':
+    case "assets":
       return -1;
   }
   for (var i = 0; i < global.marketplace_categories.length; ++i) {
@@ -272,7 +272,7 @@ epic_api.prototype.GetCategoryIndex = function (category_path) {
 
 // UNUSED: Epic's catalog API doesn't give us ratings information
 // Gets Catalog offers for the provided namespace
-// namespace 'ue': Marketplace items
+// namespace "ue": Marketplace items
 // callback expects a bool indicating whether we fetched data, i.e. (success)
 epic_api.prototype.CatalogItems = function (namespace, cb) {
   if (global.epic_oauth === undefined) {
@@ -282,9 +282,9 @@ epic_api.prototype.CatalogItems = function (namespace, cb) {
     return;
   }
   var opts = {
-    uri: 'https://catalog-public-service-prod06.ol.epicgames.com/catalog/api/shared/namespace/' + namespace + '/offers',
-    headers: { Authorization: 'bearer ' + global.epic_oauth.access_token, Origin: 'allar_ue4_marketplace_commandline' },
-    qs: { status: 'SUNSET|ACTIVE', country: 'US', locale: 'en', start: 0, count: 1000, returnItemDetails: true }
+    uri: "https://catalog-public-service-prod06.ol.epicgames.com/catalog/api/shared/namespace/" + namespace + "/offers",
+    headers: { Authorization: "bearer " + global.epic_oauth.access_token, Origin: "allar_ue4_marketplace_commandline" },
+    qs: { status: "SUNSET|ACTIVE", country: "US", locale: "en", start: 0, count: 1000, returnItemDetails: true }
   };
 
   request.get(opts, function (error, response, body) {
@@ -304,15 +304,15 @@ epic_api.prototype.CatalogItems = function (namespace, cb) {
 // Due to Epic's catalog API not offering ratings, we might as well use the
 // web API to grab everything as that does have all the data we'll ever need
 // Also lists all available categories
-// Takes function 'cb' with signature (json, path, finished)
+// Takes function "cb" with signature (json, path, finished)
 // json: The json object Epic returned for that single fetch
 // path: The category path that was fetched
 // finished: bool whether that category is finished fetching
 epic_api.prototype.getAssetsInCategory = function (category, start, addToTable, cb) {
   var opts = {
-    uri: 'https://www.unrealengine.com/assets/ajax-get-categories',
+    uri: "https://www.unrealengine.com/assets/ajax-get-categories",
     form: { category: category, start: start },
-    headers: { Cookie: global.epic_api.GetWebCookieString(), Origin: 'allar_ue4_marketplace_commandline' },
+    headers: { Cookie: global.epic_api.GetWebCookieString(), Origin: "allar_ue4_marketplace_commandline" },
   };
   request.post(opts, function (error, response, body) {
 
@@ -386,12 +386,12 @@ epic_api.prototype.GetOwnedAssets = function (cb) {
   }
   var opts = {
     // From launcher: https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/public/assets/Windows?label=Live
-    uri: 'https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/public/assets/Windows',
-    headers: { Authorization: 'bearer ' + global.epic_oauth.access_token, 'User-Agent': 'game=UELauncher, engine=UE4, build=allar_ue4_marketplace_commandline' },
-    qs: { label: 'Live' }
+    uri: "https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/public/assets/Windows",
+    headers: { Authorization: "bearer " + global.epic_oauth.access_token, "User-Agent": "game=UELauncher, engine=UE4, build=allar_ue4_marketplace_commandline" },
+    qs: { label: "Live" }
   };
 
-  console.log('Checking for EULA and fetching owned assets...');
+  console.log("Checking for EULA and fetching owned assets...");
 
   request.get(opts, function (error, response, body) {
     if (response.statusCode == 200) {
@@ -406,7 +406,7 @@ epic_api.prototype.GetOwnedAssets = function (cb) {
       var itemsTotal = itemsPending;
       var itemsToIgnore = 0;
 
-      var bar = new ProgressBar('Fetching Info: :bar :percent Completed. (ETA: :eta seconds)', { total: itemsPending });
+      var bar = new ProgressBar("Fetching Info: :bar :percent Completed. (ETA: :eta seconds)", { total: itemsPending });
 
       global.marketplace_ownedAssets.forEach((arrayItem) => {
         if (!global.marketplace_ownedAssets_consolidated.hasOwnProperty(arrayItem.catalogItemId)) {
@@ -428,7 +428,7 @@ epic_api.prototype.GetOwnedAssets = function (cb) {
         }
       });
     } else {
-      console.log('Failed to fetch assets.');
+      console.log("Failed to fetch assets.");
       if (cb != undefined) {
         cb(false);
       }
@@ -445,15 +445,15 @@ epic_api.prototype.GetConsolidatedAssetInfo = function (catalogItemId, cb) {
   }
   var opts = {
     // From launcher: https://catalog-public-service-prod06.ol.epicgames.com/catalog/api/shared/bulk/items?id=5e0f8343b8cd44a0817214ab0d39847f&country=US&locale=en-US
-    uri: 'https://catalog-public-service-prod06.ol.epicgames.com/catalog/api/shared/bulk/items',
-    headers: { Authorization: 'bearer ' + global.epic_oauth.access_token, Origin: 'allar_ue4_marketplace_commandline', 'User-Agent': 'game=UELauncher, engine=UE4, build=allar_ue4_marketplace_commandline' },
-    qs: { id: catalogItemId, country: 'US', locale: 'en-US' },
+    uri: "https://catalog-public-service-prod06.ol.epicgames.com/catalog/api/shared/bulk/items",
+    headers: { Authorization: "bearer " + global.epic_oauth.access_token, Origin: "allar_ue4_marketplace_commandline", "User-Agent": "game=UELauncher, engine=UE4, build=allar_ue4_marketplace_commandline" },
+    qs: { id: catalogItemId, country: "US", locale: "en-US" },
     pool: slowRequestPool
   };
 
   request.get(opts, function (error, response, body) {
     if (error !== null) {
-      console.log('Error getting consolidated info.');
+      console.log("Error getting consolidated info.");
       if (cb != undefined) {
         cb(false);
       }
@@ -504,15 +504,15 @@ epic_api.prototype.GetItemBuildInfo = function (catalogItemId, appId, cb) {
   var opts = {
     // From launcher: https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/public/assets/Windows/cd2c274e32764e4b9bba09115e732fde/MagicEffects411?label=Live
     uri: `https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/public/assets/Windows/${catalogItemId}/${appId}`,
-    headers: { Authorization: 'bearer ' + global.epic_oauth.access_token, Origin: 'allar_ue4_marketplace_commandline', 'User-Agent': 'game=UELauncher, engine=UE4, build=allar_ue4_marketplace_commandline' },
-    qs: { label: 'Live' },
+    headers: { Authorization: "bearer " + global.epic_oauth.access_token, Origin: "allar_ue4_marketplace_commandline", "User-Agent": "game=UELauncher, engine=UE4, build=allar_ue4_marketplace_commandline" },
+    qs: { label: "Live" },
   };
 
   console.log("Getting item build info.");
 
   request.get(opts, function (error, response, body) {
     if (error !== null) {
-      console.log('Error getting item build info.');
+      console.log("Error getting item build info.");
       if (cb != undefined) {
         cb(error, null);
       }
@@ -525,7 +525,7 @@ epic_api.prototype.GetItemBuildInfo = function (catalogItemId, appId, cb) {
       }
     } else {
       if (cb != undefined) {
-        console.log('Error getting item build info. Error code: ' + response.statusCode);
+        console.log("Error getting item build info. Error code: " + response.statusCode);
         cb(body, null);
       }
     }
@@ -537,14 +537,14 @@ epic_api.prototype.GetItemBuildInfo = function (catalogItemId, appId, cb) {
 epic_api.prototype.GetItemManifest = function (itemBuildInfo, cb) {
   var opts = {
     uri: itemBuildInfo.items.MANIFEST.distribution + itemBuildInfo.items.MANIFEST.path + "?" + itemBuildInfo.items.MANIFEST.signature,
-    headers: { Origin: 'allar_ue4_marketplace_commandline', 'User-Agent': 'game=UELauncher, engine=UE4, build=allar_ue4_marketplace_commandline' },
+    headers: { Origin: "allar_ue4_marketplace_commandline", "User-Agent": "game=UELauncher, engine=UE4, build=allar_ue4_marketplace_commandline" },
   };
 
   console.log("Getting item manifest.");
 
   request.get(opts, function (error, response, body) {
     if (error !== null) {
-      console.log('Error getting item manifest.');
+      console.log("Error getting item manifest.");
       if (cb != undefined) {
         cb(error, null);
       }
@@ -557,7 +557,7 @@ epic_api.prototype.GetItemManifest = function (itemBuildInfo, cb) {
       }
     } else {
       if (cb != undefined) {
-        console.log('Error getting item manifest. Error code: ' + response.statusCode);
+        console.log("Error getting item manifest. Error code: " + response.statusCode);
         cb(body, null);
       }
     }
@@ -574,7 +574,7 @@ function ByteToHex(b) {
 
 // Takes hash of 24-character decimal form (8 * 3char) and outputs 16-character hex in reverse byte order
 function ChunkHashToReverseHexEncoding(chunk_hash) {
-  var out_hex = '';
+  var out_hex = "";
 
   for (var i = 0; i < 8; ++i) {
     out_hex = ByteToHex(parseInt(chunk_hash.substring(i * 3, i * 3 + 3))) + out_hex;
@@ -585,22 +585,22 @@ function ChunkHashToReverseHexEncoding(chunk_hash) {
 // Pads a string with leading zeros or passed in string, i.e. padLeft(4,2) = "04"
 // http://stackoverflow.com/questions/5366849/convert-1-to-0001-in-javascript
 function padLeft(nr, n, str) {
-  return Array(n - String(nr).length + 1).join(str || '0') + nr;
+  return Array(n - String(nr).length + 1).join(str || "0") + nr;
 }
 
 function download(file, options, callback) {
   if (!file) throw ("Need a file url to download")
 
-  if (!callback && typeof options === 'function') {
+  if (!callback && typeof options === "function") {
     callback = options
   }
 
-  options = typeof options === 'object' ? options : {}
+  options = typeof options === "object" ? options : {}
   options.timeout = options.timeout || 20000
-  options.directory = options.directory ? options.directory : '.'
+  options.directory = options.directory ? options.directory : "."
   options.retries = options.retries || 3;
 
-  var uri = file.split('/')
+  var uri = file.split("/")
   options.filename = options.filename || uri[uri.length - 1]
 
   var path = options.directory + "/" + options.filename
@@ -612,12 +612,12 @@ function download(file, options, callback) {
       uri: file,
       pool: downloadPool,
       timeout: 60000,
-      headers: { 'User-Agent': 'game=UELauncher, engine=UE4, build=allar_ue4_marketplace_commandline' },
+      headers: { "User-Agent": "game=UELauncher, engine=UE4, build=allar_ue4_marketplace_commandline" },
     };
-    request.get(url_options).on('response', function (response) {
+    request.get(url_options).on("response", function (response) {
       if (response.statusCode === 200) {
         response.pipe(file_out);
-        file_out.on('finish', function () {
+        file_out.on("finish", function () {
           file_out.close(function () {
             if (callback)
               callback(false, path)
@@ -627,7 +627,7 @@ function download(file, options, callback) {
       else {
         if (callback) callback(response.statusCode)
       }
-    }).on('error', function (err) { // Handle errors
+    }).on("error", function (err) { // Handle errors
       if (options.retries > 0) {
         options.retries -= 1;
         console.log("Retry to download: " + url_options.uri + ". Remaining: " + options.retries);
@@ -644,13 +644,13 @@ epic_api.prototype.BuildItemChunkListFromManifest = function (buildinfo, manifes
   // Build chunk URL list
   var chunks = [];
   //Ref: https://download.epicgames.com/Builds/Rocket/Automated/MagicEffects411/CloudDir/ChunksV3/22/AAC7EF867364B218_CE3BE4D54E7B4ECE663C8EAC2D8929D6.chunk
-  var chunk_path = buildinfo.items.CHUNKS['path'];
-  var chunkBaseURL = buildinfo.items.CHUNKS['distribution'] + chunk_path.substring(0, chunk_path.lastIndexOf('/')) + "/ChunksV3/";
+  var chunk_path = buildinfo.items.CHUNKS["path"];
+  var chunkBaseURL = buildinfo.items.CHUNKS["distribution"] + chunk_path.substring(0, chunk_path.lastIndexOf("/")) + "/ChunksV3/";
   for (var chunk in manifest.ChunkHashList) {
     var hash = ChunkHashToReverseHexEncoding(manifest.ChunkHashList[chunk]);
     var group = padLeft(parseInt(manifest.DataGroupList[chunk]), 2);
-    var filename = chunk + '.chunk';
-    chunks.push({ guid: chunk, hash: hash, url: chunkBaseURL + group + '/' + hash + '_' + chunk + '.chunk', filename: filename });
+    var filename = chunk + ".chunk";
+    chunks.push({ guid: chunk, hash: hash, url: chunkBaseURL + group + "/" + hash + "_" + chunk + ".chunk", filename: filename });
   }
   return chunks;
 }
@@ -658,7 +658,7 @@ epic_api.prototype.BuildItemChunkListFromManifest = function (buildinfo, manifes
 // cb is in format (finished, chunkDir)
 epic_api.prototype.DownloadItemChunkList = function (manifest, chunkList, downloadDirBase, cb) {
   var downloadDir = `${downloadDirBase}${manifest.AppNameString}/chunks/`;
-  rimraf.sync(downloadDir + '*.*'); // Purge chunk folder
+  rimraf.sync(downloadDir + "*.*"); // Purge chunk folder
   mkdirp.sync(downloadDir) // Ensure path exists after purge
 
   var chunkSize = 1000;
@@ -670,7 +670,7 @@ epic_api.prototype.DownloadItemChunkList = function (manifest, chunkList, downlo
     });
 
     // Perform downloads
-    var bar = new ProgressBar('Progress: (:current / :total) :bar :percent Completed. (ETA: :eta seconds)', { total: chunkList.length });
+    var bar = new ProgressBar("Progress: (:current / :total) :bar :percent Completed. (ETA: :eta seconds)", { total: chunkList.length });
     var downloadList = downloads; // really stupid code
     downloadList.forEach((downloadItem) => {
       download(downloadItem, { directory: downloadDir, timeout: 50000 }, (err) => {
@@ -705,14 +705,14 @@ epic_api.prototype.DownloadItemChunkList = function (manifest, chunkList, downlo
 // cb is in format (finished)
 epic_api.prototype.ExtractAssetFilesFromChunks = function (manifest, chunkDir, downloadDirBase, cb) {
   var extractDir = `${downloadDirBase}${manifest.AppNameString}/extracted/`;
-  rimraf.sync(extractDir + '*.*'); // Purge chunk folder
+  rimraf.sync(extractDir + "*.*"); // Purge chunk folder
   mkdirp.sync(extractDir) // Ensure path exists after purge
 
   console.log("Fixing up chunk files...");
   var chunkFiles = fs.readdirSync(chunkDir);
 
   // strip chunk hashes from files, we do this to make some code simpler at the cost of IO
-  var bar = new ProgressBar('Fixing Up Chunk Files: Progress: (:current / :totalMB) :bar :percent Completed. (ETA: :eta seconds)', { total: chunkFiles.length });
+  var bar = new ProgressBar("Fixing Up Chunk Files: Progress: (:current / :totalMB) :bar :percent Completed. (ETA: :eta seconds)", { total: chunkFiles.length });
   chunkFiles.forEach((file) => {
     fs.renameSync(chunkDir + file, chunkDir + file.substring(17));
     bar.tick();
@@ -724,11 +724,11 @@ epic_api.prototype.ExtractAssetFilesFromChunks = function (manifest, chunkDir, d
   console.log("Decompressing files...");
 
   // decompress chunk files
-  bar = new ProgressBar('Decompressing Chunk Files: Progress: (:current / :totalMB) :bar :percent Completed. (ETA: :eta seconds)', { total: chunkFiles.length });
+  bar = new ProgressBar("Decompressing Chunk Files: Progress: (:current / :totalMB) :bar :percent Completed. (ETA: :eta seconds)", { total: chunkFiles.length });
   chunkFiles.forEach((chunkFileName) => {
-    var file = fs.openSync(chunkDir + chunkFileName, 'r');
+    var file = fs.openSync(chunkDir + chunkFileName, "r");
 
-    // We need to first read a chunk's header to find out where data begins and if its compressed
+    // We need to first read a chunk"s header to find out where data begins and if its compressed
     // Header details can be found in Engine\Source\Runtime\Online\BuildPatchServices\Private\BuildPatchChunk.cpp
     // Header size is stored in the 9th byte (index 8)
     // Whether a file is compressed is always at header byte 41 (index 0)
@@ -739,8 +739,8 @@ epic_api.prototype.ExtractAssetFilesFromChunks = function (manifest, chunkDir, d
     var compressed = (headerBuffer[40] == 1);
 
     var stats = fs.statSync(chunkDir + chunkFileName);
-    var chunkBuffer = new Buffer(stats['size'] - headerSize);
-    fs.readSync(file, chunkBuffer, 0, stats['size'] - headerSize, headerSize);
+    var chunkBuffer = new Buffer(stats["size"] - headerSize);
+    fs.readSync(file, chunkBuffer, 0, stats["size"] - headerSize, headerSize);
     fs.closeSync(file);
 
     if (compressed) {
@@ -756,16 +756,16 @@ epic_api.prototype.ExtractAssetFilesFromChunks = function (manifest, chunkDir, d
   });
 
   // Extract assets from chunks
-  bar = new ProgressBar('Extracting Asset Files: Progress: (:current / :total) :bar :percent Completed. (ETA: :eta seconds)', { total: manifest.FileManifestList.length });
+  bar = new ProgressBar("Extracting Asset Files: Progress: (:current / :total) :bar :percent Completed. (ETA: :eta seconds)", { total: manifest.FileManifestList.length });
   manifest.FileManifestList.forEach((fileList) => {
     var fileSize = 0;
     var fileName = extractDir + fileList.Filename;
-    var fileDir = fileName.substring(0, fileName.lastIndexOf('/'));
-    mkdirp.sync(fileDir); // Create asset file folder if it doesn't exist
+    var fileDir = fileName.substring(0, fileName.lastIndexOf("/"));
+    mkdirp.sync(fileDir); // Create asset file folder if it doesn"t exist
 
     // Calculate total asset file size
     fileList.FileChunkParts.forEach((chunkPart) => {
-      fileSize += parseInt('0x' + ChunkHashToReverseHexEncoding(chunkPart.Size));
+      fileSize += parseInt("0x" + ChunkHashToReverseHexEncoding(chunkPart.Size));
     });
 
     var buffer = new Buffer(fileSize);
@@ -774,10 +774,10 @@ epic_api.prototype.ExtractAssetFilesFromChunks = function (manifest, chunkDir, d
     // Start reading chunk data and assembling it into a buffer
     fileList.FileChunkParts.forEach((chunkPart) => {
       var chunkGuid = chunkPart.Guid;
-      var chunkOffset = parseInt('0x' + ChunkHashToReverseHexEncoding(chunkPart.Offset));
-      var chunkSize = parseInt('0x' + ChunkHashToReverseHexEncoding(chunkPart.Size));
+      var chunkOffset = parseInt("0x" + ChunkHashToReverseHexEncoding(chunkPart.Offset));
+      var chunkSize = parseInt("0x" + ChunkHashToReverseHexEncoding(chunkPart.Size));
 
-      var file = fs.openSync(chunkDir + chunkGuid + '.chunk', 'r');
+      var file = fs.openSync(chunkDir + chunkGuid + ".chunk", "r");
       fs.readSync(file, buffer, bufferOffset, chunkSize, chunkOffset);
       fs.closeSync(file);
       bufferOffset += chunkSize;

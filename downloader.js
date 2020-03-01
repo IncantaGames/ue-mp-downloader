@@ -8,16 +8,16 @@
 // Normally don't need to do this global bullshit but 'epic_api.js' is used in another JS app that requires it
 // So instead of maintaining two copies of this api, we'll just re-use it like this
 // @TODO: Learn how to do all this the right way
-global.request = (global.request === undefined) ? require('request') : global.request;
+global.request = (global.request === undefined) ? require("request") : global.request;
 global.request = request.defaults({ followRedirect: false, followAllRedirects: false });
-global.epic_api = (global.epic_api === undefined) ? require('./epic_api.js') : global.epic_api;
+global.epic_api = (global.epic_api === undefined) ? require("./epic_api.js") : global.epic_api;
 
-const prompt = require('prompt');
-const cheerio = require('cheerio');
-const menu = require('console-menu');
-const dotenv = require('dotenv').config();
+const prompt = require("prompt");
+const cheerio = require("cheerio");
+const menu = require("console-menu");
+const dotenv = require("dotenv").config();
 
-// Takes an HTML form from cheerio.serializeArray() and converts it to an object suitable for the 'request' module
+// Takes an HTML form from cheerio.serializeArray() and converts it to an object suitable for the "request" module
 function SerializeLoginFormArray(form) {
   var result = {};
   form.forEach((element) => {
@@ -31,14 +31,14 @@ var promptSchema = {
   properties: {
     username: {
       required: true,
-      type: 'string',
+      type: "string",
       default: process.env.UE4_ACCOUNT
     },
     password: {
       required: true,
-      type: 'string',
+      type: "string",
       hidden: true,
-      replace: '*',
+      replace: "*",
       default: process.env.UE4_PASSWORD
     }
   }
@@ -56,7 +56,7 @@ function TryLogin() {
         process.exit(0); // Control+C
       }
       const $ = cheerio.load(body);
-      var loginData = SerializeLoginFormArray($('form#loginForm').serializeArray());
+      var loginData = SerializeLoginFormArray($("form#loginForm").serializeArray());
       loginData.epic_username = result.username;
       loginData.password = result.password;
       epic_api.WebLogin(loginData, OnLogin);
@@ -68,7 +68,7 @@ function TryLogin() {
 // Return error codes for WebLogin are retarded and should be hardcoded to sane values
 // I was probably drunk when writing epic_api.js
 function OnLogin(status, complete) {
-  if (status === 'Failed') {
+  if (status === "Failed") {
     console.log("Failed to log in.");
     TryLogin();
     return;
@@ -112,11 +112,11 @@ function OnLogin(status, complete) {
 
 // The real meat of the program. Once items are fetched, this will handle any downloads
 function ShowDownloadAssetsMenu(items, cb) {
-  console.log('\x1Bc'); // clear screen
+  console.log("\x1Bc"); // clear screen
 
   var helpMessage = "Scroll using Up/Down, arrow keys, or Page Up / Page Down. Press CTRL+C to quit.";
 
-  menu(items, { header: 'Select a Marketplace Asset to Download', pageSize: 10, border: true, helpMessage: helpMessage })
+  menu(items, { header: "Select a Marketplace Asset to Download", pageSize: 10, border: true, helpMessage: helpMessage })
     .then((item) => {
       if (item == undefined) {
         process.exit(0); // Control+C
@@ -124,7 +124,7 @@ function ShowDownloadAssetsMenu(items, cb) {
       }
 
       var versions = global.epic_api.GetEngineVersionsForItem(item);
-      menu(versions, { header: item.title + ' - Choose Engine Version', border: true, helpMessage: helpMessage })
+      menu(versions, { header: item.title + " - Choose Engine Version", border: true, helpMessage: helpMessage })
         .then((version) => {
           if (version == undefined) {
             process.exit(0); // Control+C
@@ -132,13 +132,13 @@ function ShowDownloadAssetsMenu(items, cb) {
           }
           global.epic_api.GetItemBuildInfo(item.id, version.appId, (error, buildinfo) => {
             if (error !== null) {
-              console.error('Failed to get item build info. ' + error);
+              console.error("Failed to get item build info. " + error);
               return;
             }
 
             global.epic_api.GetItemManifest(buildinfo, (error, manifest) => {
               if (error !== null) {
-                console.error('Failed to get item manifest. ' + error);
+                console.error("Failed to get item manifest. " + error);
                 return;
               }
               var chunkList = global.epic_api.BuildItemChunkListFromManifest(buildinfo, manifest);
@@ -146,7 +146,7 @@ function ShowDownloadAssetsMenu(items, cb) {
                 if (finishedDownloading) {
                   global.epic_api.ExtractAssetFilesFromChunks(manifest, chunkDir, "./download/", (finishedExtracting) => {
                     if (finishedExtracting) {
-                      console.log(item.title + ' build ' + version.appId + ' successfully extracted. Going back to download menu...');
+                      console.log(item.title + " build " + version.appId + " successfully extracted. Going back to download menu...");
                       if (cb != undefined) {
                         setTimeout(cb, 5000);
                       }
