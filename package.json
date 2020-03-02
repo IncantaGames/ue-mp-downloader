@@ -3,11 +3,11 @@
   "version": "2.0.0",
   "description": "Downloads owned assets from the UE4 marketplace from a shell.",
   "bin": {
-    "ue4-mp-downloader": "src/ue4-mp-downloader.js"
+    "ue4-mp-downloader": "lib/index.js"
   },
   "scripts": {
     "build": "tsc",
-    "start": "node src/index.js",
+    "start": "node lib/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Mike Seese",
