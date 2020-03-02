@@ -1,20 +1,27 @@
 import axios, { AxiosInstance } from "axios";
 import axiosCookieJarSupport from "axios-cookiejar-support";
 import tough from "tough-cookie";
+import path from "path";
 
-import User from "../user";
+import User from "../prompt/user";
 import {
   InitializeSessionCookies,
   InitializeUserSession,
-  IEpicOauthResponse
+  IEpicOauthResponse,
+  GetItemBuildInfo,
+  GetItemManifest,
+  BuildItemChunkListFromManifest,
+  DownloadItemChunkList,
+  ExtractAssetFilesFromChunks
 } from "./requests";
 import { GetOwnedAssets, IEpicAssetDetail } from "./requests/get-owned-assets";
+import { IDownloadDetails } from "../prompt/asset-version";
 
 export default class EpicSession {
   private user: User;
   private transport: AxiosInstance;
   private sessionDetails: IEpicOauthResponse | null;
-  private assets: IEpicAssetDetail[];
+  public assets: IEpicAssetDetail[];
 
   constructor(user: User) {
     this.sessionDetails = null;
@@ -42,5 +49,19 @@ export default class EpicSession {
     }
 
     this.assets = await GetOwnedAssets(this.transport, this.sessionDetails);
+  }
+
+  public async downloadAsset(details: IDownloadDetails) {
+    if (!this.sessionDetails) {
+      throw new Error("You haven't logged in yet? Shouldn't be possible");
+    }
+
+    const downloadDir = path.resolve("./download");
+
+    const buildInfo = await GetItemBuildInfo(this.transport, this.sessionDetails, details);
+    const manifest = await GetItemManifest(this.transport, buildInfo);
+    const chunkList = BuildItemChunkListFromManifest(buildInfo, manifest);
+    const chunkDir = await DownloadItemChunkList(this.transport, manifest, chunkList, downloadDir);
+    await ExtractAssetFilesFromChunks(manifest, chunkDir);
   }
 }

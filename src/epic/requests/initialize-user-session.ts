@@ -1,7 +1,7 @@
 import { AxiosInstance, AxiosResponse } from "axios";
-import User from "../../user";
+import User from "../../prompt/user";
 import { CookieJar, Cookie } from "tough-cookie";
-import { getMfa } from "../../mfa";
+import { getMfa } from "../../prompt/mfa";
 import { IEpicOauthResponse } from "./epic-oauth-response";
 
 export async function InitializeUserSession(transport: AxiosInstance, user: User) {

@@ -1,5 +1,6 @@
-import User from "./user";
+import User from "./prompt/user";
 import EpicSession from "./epic/epic-session";
+import { GetAssetAndVersionToDownload } from "./prompt/asset-version";
 
 (async () => {
   const user = new User();
@@ -7,6 +8,11 @@ import EpicSession from "./epic/epic-session";
 
   const session = new EpicSession(user);
   await session.initialize();
-})();
+  await session.getAssets();
 
-setTimeout(process.exit, 120000);
+  while (true) {
+    const downloadDetails = await GetAssetAndVersionToDownload(session.assets);
+
+    await session.downloadAsset(downloadDetails);
+  }
+})();

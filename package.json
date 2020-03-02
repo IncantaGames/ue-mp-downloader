@@ -19,21 +19,22 @@
     "axios": "^0.19.2",
     "axios-cookiejar-support": "^0.5.1",
     "cheerio": "^1.0.0-rc.2",
+    "cli-progress": "^3.6.0",
     "console-menu": "^0.1.0",
     "dotenv": "^8.2.0",
-    "fs": "0.0.1-security",
     "jquery": "^3.2.1",
     "mem": ">=4.0.0",
     "mkdirp": "^0.5.1",
     "open": "7.0.2",
-    "progress": "^2.0.0",
     "prompt": "^1.0.0",
-    "request": "^2.81.0",
     "rimraf": "^2.6.1",
     "tough-cookie": "^3.0.1",
     "yargs": "^8.0.2"
   },
   "devDependencies": {
+    "@types/cli-progress": "^3.4.2",
+    "@types/mkdirp": "^1.0.0",
+    "@types/rimraf": "^2.0.3",
     "typescript": "^3.8.3"
   }
 }

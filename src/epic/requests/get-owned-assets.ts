@@ -35,10 +35,10 @@ export interface IEpicAssetDetail {
   entitlementName: string;
   entitlementType: string;
   itemType: string;
-  releaseInfor: Array<{
+  releaseInfo: Array<{
     id: string;
     appId: string;
-    compatibleApps: string[];
+    compatibleApps?: string[];
     platform: string[];
     dateAdded: string; // iso format
     releaseNote: string;
@@ -48,6 +48,40 @@ export interface IEpicAssetDetail {
   developerId: string;
   endOfSupport: boolean;
   unsearchable: boolean;
+}
+
+export interface IEpicAssetVersion {
+  title: string;
+  appId: string;
+  version: string;
+  minorVersion: number;
+};
+
+export function GetEngineVersionsForItem(detail: IEpicAssetDetail): IEpicAssetVersion[] {
+  const versions: IEpicAssetVersion[] = [];
+
+  detail.releaseInfo.forEach((releaseInfo) => {
+    if (releaseInfo.compatibleApps) {
+      releaseInfo.compatibleApps.forEach((compatibleApp) => {
+        var minorVersion = Number(compatibleApp.replace("UE_4.", ""));
+        versions.push({
+          title: `4.${minorVersion}`,
+          appId: releaseInfo.appId,
+          version: compatibleApp,
+          minorVersion: minorVersion
+        });
+      });
+    }
+  });
+
+  // Sorts latest version first
+  versions.sort((a, b) => {
+    if (a.minorVersion > b.minorVersion) return -1;
+    if (a.minorVersion < b.minorVersion) return 1;
+    return 0;
+  });
+
+  return versions;
 }
 
 export async function GetOwnedAssets(transport: AxiosInstance, sessionDetails: IEpicOauthResponse): Promise<IEpicAssetDetail[]> {
@@ -82,7 +116,7 @@ export async function GetOwnedAssets(transport: AxiosInstance, sessionDetails: I
       throw new Error(`Couldn't get detail response for asset ${asset.assetId}`);
     }
 
-    const detail = (detailResponse.data as {[key: string]: IEpicAssetDetail})[asset.assetId];
+    const detail = (detailResponse.data as {[key: string]: IEpicAssetDetail})[asset.catalogItemId];
 
     const isAsset = detail.categories.find((cat) => {
       return (cat.path === "assets" || cat.path === "projects" || cat.path === "plugins")
